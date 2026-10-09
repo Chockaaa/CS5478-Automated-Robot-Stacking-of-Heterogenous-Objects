@@ -1,0 +1,25 @@
+{
+  "task": "stack-block-pyramid",
+  "results": [
+    {
+      "seed": 0,
+      "reward": 0.9999999999999999,
+      "steps": 7,
+      "assisted": false,
+      "error": null,
+      "xyz_errors": [
+        0.007824078058161455,
+        0.007547130413180438,
+        0.007701593851675107,
+        0.01761434593260163,
+        0.017592664708576164,
+        0.02754850041296936
+      ],
+      "max_xyz_error": 0.02754850041296936,
+      "upright": true,
+      "supported": true,
+      "success": false,
+      "seconds": 23.96799999999348
+    }
+  ]
+}

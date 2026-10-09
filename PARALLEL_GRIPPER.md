@@ -1,87 +1,113 @@
-# Parallel-gripper stacking
+# Parallel-gripper stacking: tested simulation
 
-This repo now includes a stacking-only task named
-`stack-block-pyramid-parallel`. It uses the bundled Robotiq 2F-85 model while
-leaving every original Ravens task, including `stack-block-pyramid`, unchanged.
+The branch `feature/parallel-gripper-stacking` now runs on native Windows
+in the Conda environment `ravens-stacking` (Python 3.11).
+The original TensorFlow training dependencies are not installed in this environment.
 
-The original Transporter action still predicts one top-down pick pose and one
-place pose. The fingers visibly close, and a fixed constraint stabilizes an
-object centered between them. This is intentionally a constraint-assisted
-grasp rather than a learned force-closure grasp, so the existing oracle and
-Transporter Network can be used without changing their outputs.
+## Run
 
-## Plan and scope
+From the repository root in Anaconda PowerShell:
 
-1. Validate the scripted oracle and gripper in PyBullet.
-2. Generate new demonstrations. Old suction demonstrations should not be
-   reused because the gripper changes the observations and execution outcome.
-3. Train the Transporter agent on the new dataset.
-4. Evaluate on separately generated test episodes.
-5. After this baseline works, replace the fixed constraint in
-   `ParallelJawGripper.activate` with friction-only contact if realistic grasp
-   physics is required. That version also needs a grasp-width/orientation
-   policy and is outside the current 2D Transporter action space.
-
-## Environment
-
-Ravens pins TensorFlow 2.3 and NumPy 1.18, so use its original Python 3.7
-environment on Linux (or WSL2). From the repository root:
-
-```bash
-conda create -n ravens-gripper python=3.7 -y
-conda activate ravens-gripper
-pip install -r requirements.txt
-pip install -e .
+```powershell
+conda activate ravens-stacking
+python -m ravens.stacking_smoke --task=stack-block-pyramid-parallel --episodes=1 --assisted --disp
 ```
 
-## Run the stacking oracle
+Different-sized boxes:
 
-Start with one visible episode:
-
-```bash
-python ravens/demos.py \
-  --assets_root=./ravens/environments/assets/ \
-  --disp=True \
-  --task=stack-block-pyramid-parallel \
-  --mode=train \
-  --n=1
+```powershell
+python -m ravens.stacking_smoke --task=stack-box-tower-parallel --episodes=1 --assisted --disp
 ```
 
-For headless data generation, remove `--disp=True` and generate both splits:
+Boxes and an upright cylinder:
 
-```bash
-python ravens/demos.py --assets_root=./ravens/environments/assets/ \
-  --task=stack-block-pyramid-parallel --mode=train --n=100
-
-python ravens/demos.py --assets_root=./ravens/environments/assets/ \
-  --task=stack-block-pyramid-parallel --mode=test --n=100
+```powershell
+python -m ravens.stacking_smoke --task=stack-mixed-tower-parallel --episodes=1 --assisted --disp
 ```
 
-## Train and evaluate
+Omit `--disp` for headless execution. Omit `--assisted` to test friction alone.
+Use `--seed=3` to reproduce the failing assisted mixed-object scene.
+Use `--episodes=5 --output=my-results.json --snapshots` to save a batch of
+results and final camera images. The script returns a nonzero exit code if any
+trial fails. Some Conda versions on Windows mask that exit code; inspect the
+JSON results as well.
 
-```bash
-python ravens/train.py \
-  --task=stack-block-pyramid-parallel \
-  --agent=transporter \
-  --n_demos=100
+## Recreate the environment
 
-python ravens/test.py \
-  --assets_root=./ravens/environments/assets/ \
-  --task=stack-block-pyramid-parallel \
-  --agent=transporter \
-  --n_demos=100 \
-  --n_steps=1000
+The environment on this computer was cloned from the existing `stacking`
+environment to reuse its working Conda PyBullet build, then simulation
+dependencies were installed. The source environment was not modified.
+This minimal recipe is provided for a fresh installation; it has not been
+independently recreated from scratch:
+
+```powershell
+conda env create -f environment-stacking.yml
+conda activate ravens-stacking
+python -m unittest ravens.tasks.parallel_gripper_test -v
 ```
 
-Add `--disp=True` to evaluation when you want the PyBullet GUI. Use the same
-`--n_demos` and `--n_steps` values used for the checkpoint you want to load.
+No editable installation is required when running from the repository root.
+Do not run `pip install -r requirements.txt` in this simulation environment:
+that file belongs to the old TensorFlow training setup.
 
-## Main tuning values
+## What is implemented
 
-The following fields are in `ravens/tasks/grippers.py`:
+- A simple parallel gripper with two motor-driven sliding fingers, a 90 mm
+  opening, physical collision shapes, and friction. This replaces the earlier
+  unverified Robotiq integration; it is not a calibrated Robotiq 2F-85 model.
+- Both fingers must contact the same movable object before grasp acceptance.
+  Empty and off-centre grasps cannot activate assistance.
+- Optional assistance adds a fixed constraint only after bilateral contact.
+  It is removed before opening the fingers. Released stacks remain physical.
+- A scripted expert chooses object-centre picks and object target poses using
+  exact simulator state. The controller measures the object-to-tool transform
+  after lifting to compensate for movement during closure.
+- The six-cube pyramid uses a 3-2-1 layout. Initial cubes have jaw clearance;
+  their position jitter, their yaw, and the base yaw vary with the seed.
+- Box towers use three square-footprint boxes (60, 48, 36 mm wide), random
+  heights between 32 and 45 mm, random initial yaw, and a random tower location.
+  The mixed task replaces the middle box with an upright cylinder.
+- Layers are built bottom-up. Tower height is computed from actual dimensions.
+  Motion and settling waits are bounded.
 
-- `max_grasp_width = 0.085`: maximum object width in metres.
-- `max_center_offset = 0.03`: allowed horizontal error from the jaw centre.
-- `_set_fingers(0.72)`: finger closing amount in radians.
+This tests a scripted stacking controller, not visual grasp learning.
+The action convention now uses object-centre heights and absolute object target
+rotations. Stock Transporter uses surface-height picks and a different rotation
+convention, so the old training commands are not compatible as-is. An action
+adapter, grasp-orientation output, and compatible demonstration collection are
+needed before training. No neural-network training was run.
 
-The stock blocks are 0.04 m wide, so they are inside these limits.
+## Validation
+
+Native Windows results, seeds 0 through 4:
+
+| Task | Contact-assisted | Friction only |
+| --- | --- | --- |
+| Six-cube pyramid | 5/5 | 2/5 |
+| Different-sized box tower | 5/5 | 0/5 |
+| Box-cylinder-box tower | 4/5 | 1/5 |
+
+The three independent contact/release unit tests pass, and
+`python -m pip check` reports no broken requirements in the created environment.
+
+An additional original suction-pyramid regression reaches full Ravens reward.
+Its strict XYZ check fails as expected because the original task's target
+heights include air gaps (up to 27.5 mm above the settled cube centres);
+see `validation/suction-regression.json`. The new parallel task corrects those
+target heights.
+
+See the six `validation/*-assisted.json` and `*-friction.json` files for seeded
+trial results. Exploratory results from earlier code revisions are separately
+stored in `validation/exploratory/`; do not combine them with the final results.
+
+A success requires full task reward and, after 480 additional simulation steps:
+a unique matching of every object to a target within 10 mm in XYZ, upright
+orientation (local up within approximately 11.5 degrees of vertical), and
+load-bearing upward contact for each object. This prevents the original XY-only
+Ravens reward from reporting a tabletop arrangement as a stack.
+
+Five seeds are a small smoke test, not a benchmark guarantee. Assisted box
+stacking is the usable baseline; friction-only grasping still slips or tilts.
+One assisted mixed-object scene ejects the cylinder and hits the settling limit.
+Irregular meshes, spheres, rectangular-footprint grasp planning, general clutter,
+continuous-control tasks, and real robot execution were not validated.

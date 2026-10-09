@@ -1,0 +1,85 @@
+{
+  "task": "stack-box-tower-parallel",
+  "results": [
+    {
+      "seed": 0,
+      "reward": 1.0,
+      "steps": 3,
+      "assisted": true,
+      "xyz_errors": [
+        0.0011033454330835774,
+        0.0011585222978984947,
+        0.0013462378783904885
+      ],
+      "max_xyz_error": 0.0013462378783904885,
+      "upright": true,
+      "supported": true,
+      "success": true,
+      "seconds": 5.0
+    },
+    {
+      "seed": 1,
+      "reward": 1.0,
+      "steps": 3,
+      "assisted": true,
+      "xyz_errors": [
+        0.0012894726531184864,
+        0.0023902363890319525,
+        0.0011969918933491081
+      ],
+      "max_xyz_error": 0.0023902363890319525,
+      "upright": true,
+      "supported": true,
+      "success": true,
+      "seconds": 4.780999999959022
+    },
+    {
+      "seed": 2,
+      "reward": 1.0,
+      "steps": 3,
+      "assisted": true,
+      "xyz_errors": [
+        0.001415946934034843,
+        0.0014202220475259088,
+        0.0010592536814919532
+      ],
+      "max_xyz_error": 0.0014202220475259088,
+      "upright": true,
+      "supported": true,
+      "success": true,
+      "seconds": 4.76600000000326
+    },
+    {
+      "seed": 3,
+      "reward": 1.0,
+      "steps": 3,
+      "assisted": true,
+      "xyz_errors": [
+        0.0012746907389816528,
+        0.0013589611807475446,
+        0.0012544170496390375
+      ],
+      "max_xyz_error": 0.0013589611807475446,
+      "upright": true,
+      "supported": true,
+      "success": true,
+      "seconds": 5.0310000000172295
+    },
+    {
+      "seed": 4,
+      "reward": 1.0,
+      "steps": 3,
+      "assisted": true,
+      "xyz_errors": [
+        0.0011421188496448275,
+        0.001471888571597001,
+        0.0011606988124128633
+      ],
+      "max_xyz_error": 0.001471888571597001,
+      "upright": true,
+      "supported": true,
+      "success": true,
+      "seconds": 4.98399999999674
+    }
+  ]
+}

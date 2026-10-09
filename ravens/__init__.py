@@ -15,8 +15,18 @@
 
 """Package init."""
 
-from ravens import agents
-from ravens import models
-from ravens import tasks
-from ravens.dataset import Dataset
-from ravens.environments.environment import Environment
+import importlib
+
+
+def __getattr__(name):
+  """Keep simulation usable without importing the optional training stack."""
+  if name in ('agents', 'models', 'tasks'):
+    value = importlib.import_module('ravens.' + name)
+  elif name == 'Dataset':
+    value = importlib.import_module('ravens.dataset').Dataset
+  elif name == 'Environment':
+    value = importlib.import_module('ravens.environments.environment').Environment
+  else:
+    raise AttributeError(name)
+  globals()[name] = value
+  return value

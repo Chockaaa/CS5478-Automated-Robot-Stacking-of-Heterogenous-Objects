@@ -1,0 +1,85 @@
+{
+  "task": "stack-box-tower-parallel",
+  "results": [
+    {
+      "seed": 0,
+      "reward": 0.6666666666666666,
+      "steps": 6,
+      "assisted": false,
+      "xyz_errors": [
+        0.05181742935782931,
+        0.1301583701166358,
+        0.18614996980261023
+      ],
+      "max_xyz_error": 0.18614996980261023,
+      "upright": false,
+      "supported": true,
+      "success": false,
+      "seconds": 18.71899999998277
+    },
+    {
+      "seed": 1,
+      "reward": 0.3333333333333333,
+      "steps": 3,
+      "assisted": false,
+      "xyz_errors": [
+        0.02267486626522524,
+        0.1368947456920683,
+        0.3273945253413858
+      ],
+      "max_xyz_error": 0.3273945253413858,
+      "upright": false,
+      "supported": true,
+      "success": false,
+      "seconds": 11.172000000020489
+    },
+    {
+      "seed": 2,
+      "reward": 0.3333333333333333,
+      "steps": 3,
+      "assisted": false,
+      "xyz_errors": [
+        0.020421714274061514,
+        0.059839041409685434,
+        0.2668413404427418
+      ],
+      "max_xyz_error": 0.2668413404427418,
+      "upright": false,
+      "supported": true,
+      "success": false,
+      "seconds": 10.813000000023749
+    },
+    {
+      "seed": 3,
+      "reward": 0.3333333333333333,
+      "steps": 3,
+      "assisted": false,
+      "xyz_errors": [
+        0.02286637491071582,
+        0.08228890433724437,
+        0.32617534703354073
+      ],
+      "max_xyz_error": 0.32617534703354073,
+      "upright": false,
+      "supported": true,
+      "success": false,
+      "seconds": 11.172000000020489
+    },
+    {
+      "seed": 4,
+      "reward": 0.3333333333333333,
+      "steps": 9,
+      "assisted": false,
+      "xyz_errors": [
+        0.00139323480303948,
+        0.019324350456700952,
+        0.3049884515975515
+      ],
+      "max_xyz_error": 0.3049884515975515,
+      "upright": true,
+      "supported": true,
+      "success": false,
+      "seconds": 22.29700000002049
+    }
+  ]
+}

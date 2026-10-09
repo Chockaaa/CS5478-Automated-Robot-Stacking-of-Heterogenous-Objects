@@ -29,6 +29,7 @@ from ravens.tasks.palletizing_boxes import PalletizingBoxes
 from ravens.tasks.place_red_in_green import PlaceRedInGreen
 from ravens.tasks.stack_block_pyramid import StackBlockPyramid
 from ravens.tasks.stack_block_pyramid_parallel import StackBlockPyramidParallel
+from ravens.tasks.stack_heterogeneous import StackHeterogeneous, StackMixed
 from ravens.tasks.sweeping_piles import SweepingPiles
 from ravens.tasks.task import Task
 from ravens.tasks.towers_of_hanoi import TowersOfHanoi
@@ -48,6 +49,8 @@ names = {
     'place-red-in-green': PlaceRedInGreen,
     'stack-block-pyramid': StackBlockPyramid,
     'stack-block-pyramid-parallel': StackBlockPyramidParallel,
+    'stack-box-tower-parallel': StackHeterogeneous,
+    'stack-mixed-tower-parallel': StackMixed,
     'sweeping-piles': SweepingPiles,
     'towers-of-hanoi': TowersOfHanoi
 }
