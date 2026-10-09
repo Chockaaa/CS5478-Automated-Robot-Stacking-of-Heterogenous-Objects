@@ -73,7 +73,6 @@ class Environment(gym.Env):
     self.agent_cams = cameras.RealSenseD415.CONFIG
 
     self.assets_root = assets_root
-    self.hz = hz
 
     color_tuple = [
         gym.spaces.Box(0, 255, config['image_size'] + (3,), dtype=np.uint8)
@@ -241,12 +240,8 @@ class Environment(gym.Env):
         return obs, 0.0, True, self.info
 
     # Step simulator asynchronously until objects settle.
-    settle_steps = 0
     while not self.is_static:
       p.stepSimulation()
-      settle_steps += 1
-      if settle_steps >= self.hz * 10:
-        raise RuntimeError('Objects did not settle within 10 simulated seconds.')
 
     # Get task rewards.
     reward, info = self.task.reward() if action is not None else (0, {})
@@ -360,13 +355,13 @@ class Environment(gym.Env):
       currj = [p.getJointState(self.ur5, i)[0] for i in self.joints]
       currj = np.array(currj)
       diffj = targj - currj
-      if all(np.abs(diffj) < getattr(self.ee, 'joint_tolerance', 1e-2)):
+      if all(np.abs(diffj) < 1e-2):
         return False
 
       # Move with constant velocity
       norm = np.linalg.norm(diffj)
       v = diffj / norm if norm > 0 else 0
-      stepj = currj + v * min(speed, norm)
+      stepj = currj + v * speed
       gains = np.ones(len(self.joints))
       p.setJointMotorControlArray(
           bodyIndex=self.ur5,
