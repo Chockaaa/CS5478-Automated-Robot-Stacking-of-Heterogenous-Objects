@@ -75,6 +75,10 @@ export PYTHONPATH=${PWD}
 
 ## Getting Started
 
+For the Robotiq parallel-gripper stacking task and Transporter agent, see
+[Robotiq stacking](docs/robotiq.md). It has its own tested Conda environment
+and data-generation commands; the original suction workflow remains below.
+
 **Step 1.** Generate training and testing data (saved locally). Note: remove `--disp` for headless mode.
 
 ```shell

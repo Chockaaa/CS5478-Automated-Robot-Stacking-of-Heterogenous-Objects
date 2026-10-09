@@ -240,8 +240,13 @@ class Environment(gym.Env):
         return obs, 0.0, True, self.info
 
     # Step simulator asynchronously until objects settle.
+    settle_steps = 0
     while not self.is_static:
       p.stepSimulation()
+      settle_steps += 1
+      limit = getattr(self.task, 'max_settle_steps', None)
+      if limit is not None and settle_steps >= limit:
+        raise RuntimeError('Scene did not settle within the task step limit.')
 
     # Get task rewards.
     reward, info = self.task.reward() if action is not None else (0, {})
@@ -355,13 +360,13 @@ class Environment(gym.Env):
       currj = [p.getJointState(self.ur5, i)[0] for i in self.joints]
       currj = np.array(currj)
       diffj = targj - currj
-      if all(np.abs(diffj) < 1e-2):
+      if all(np.abs(diffj) < getattr(self.ee, 'joint_tolerance', 1e-2)):
         return False
 
       # Move with constant velocity
       norm = np.linalg.norm(diffj)
       v = diffj / norm if norm > 0 else 0
-      stepj = currj + v * speed
+      stepj = currj + v * min(speed, norm)
       gains = np.ones(len(self.joints))
       p.setJointMotorControlArray(
           bodyIndex=self.ur5,
@@ -375,6 +380,8 @@ class Environment(gym.Env):
 
   def movep(self, pose, speed=0.01):
     """Move UR5 to target end effector pose."""
+    if hasattr(self.ee, 'tip_offset'):
+      pose = (np.asarray(pose[0]) + (0, 0, self.ee.tip_offset), pose[1])
     targj = self.solve_ik(pose)
     return self.movej(targj, speed)
 

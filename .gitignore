@@ -1,1 +1,20 @@
 /venv/
+/.venv/
+
+# Python-generated files.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Ravens datasets, logs, checkpoints, and generated run artifacts.
+/checkpoints/
+/logs/
+/*-train/
+/*-test/
+/robotiq-results/
+/robotiq-data/
+/robotiq-dataset/
+/robotiq-training/
+/validation/exploratory/
+/stacking-results.json
