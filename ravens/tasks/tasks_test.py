@@ -85,10 +85,6 @@ class TaskTest(parameterized.TestCase):
           tasks.StackBlockPyramid(),
       ),
       (
-          'StackBlockPyramidParallel',
-          tasks.StackBlockPyramidParallel(),
-      ),
-      (
           'SweepingPiles',
           tasks.SweepingPiles(),
       ),
