@@ -1,0 +1,379 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "branch": "feature/parallel-gripper-stacking",
+  "scope": "Headless PyBullet; three-object tower, one upright cube, cuboid and cylinder; randomized dimensions, positions and yaw; scene version 2.",
+  "training": {
+    "collection_report": "robotiq-results/mixed-v2-collection/results.json",
+    "dataset": "robotiq-dataset/mixed-v2/stack-heterogeneous-train",
+    "successful_demonstrations": 30,
+    "attempted_scenes": 50,
+    "train_seed_range": [
+      0,
+      49
+    ],
+    "raw_actions": 122,
+    "progress_actions_used": 90,
+    "collection_contact_preload": 0.01,
+    "evaluation_contact_preload": 0.02,
+    "phases": [
+      {
+        "from": 0,
+        "to": 400,
+        "compiled": false,
+        "seed": 0
+      },
+      {
+        "from": 400,
+        "to": 1000,
+        "compiled": true,
+        "seed": 0,
+        "optimizer_reset": true
+      },
+      {
+        "from": 1000,
+        "to": 3000,
+        "compiled": true,
+        "seed": 1,
+        "optimizer_reset": true
+      }
+    ],
+    "notes": [
+      "Initial run requested 1000 updates but was stopped after checkpoint 400; unsaved updates were discarded.",
+      "Resume reloads weights only and creates fresh Adam optimizers.",
+      "Initial phase seeded NumPy and TensorFlow; Python random seeding was added for subsequent phases. Bitwise reproduction is not claimed.",
+      "Only successful demonstrations and actions increasing stable object count were used; this biases training toward easier scenes."
+    ]
+  },
+  "selection": {
+    "split": "validation",
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "controller_preloads": [
+      {
+        "value": 0.01,
+        "successes": 3,
+        "episodes": 5
+      },
+      {
+        "value": 0.04,
+        "successes": 3,
+        "episodes": 5
+      },
+      {
+        "value": 0.02,
+        "successes": 4,
+        "episodes": 5,
+        "selected": true
+      }
+    ],
+    "final_decoder": "rgbd-refined-v4-feasible-picks",
+    "checkpoints": [
+      {
+        "step": 1000,
+        "successes": 2,
+        "episodes": 5,
+        "mean_stable_objects": 1.8,
+        "reports": [
+          "robotiq-results/mixed-v2-validation1000-feasible/results.json",
+          "robotiq-results/mixed-v2-validation1000-feasible-tail/results.json"
+        ],
+        "selected": true
+      },
+      {
+        "step": 3000,
+        "successes": 1,
+        "episodes": 5,
+        "mean_stable_objects": 1,
+        "reports": [
+          "robotiq-results/mixed-v2-validation3000/results.json"
+        ],
+        "selected": false
+      }
+    ],
+    "frozen_before_test": true
+  },
+  "frozen_source_sha256": [
+    {
+      "path": "ravens/agents/transporter_heterogeneous.py",
+      "sha256": "5338006063b83e0aa7e64742b2c45129996fb62ab9330a4d9616d36a49ce3de1"
+    },
+    {
+      "path": "ravens/tasks/robotiq.py",
+      "sha256": "66e76e1c88ba33ad776f681fa0377c13ca171807be266808544c8d15c1d04fec"
+    },
+    {
+      "path": "ravens/tasks/stack_heterogeneous.py",
+      "sha256": "df5c85f4cc82be194f9e776bed43a9643ecdb8c66e1f28239e8617dfdcecabc8"
+    },
+    {
+      "path": "ravens/heterogeneous_run.py",
+      "sha256": "75184a8a61e230f79fc15e90f72b7ce435c97acd89a5283c80ac709dcf7a85e4"
+    },
+    {
+      "path": "ravens/heterogeneous_train.py",
+      "sha256": "09c2fe9d2a75287b52729fa1005725519ba1c6616d6ffcde2f4e8c4da5576ee7"
+    }
+  ],
+  "test": {
+    "policy": {
+      "raw_report": "robotiq-results/mixed-v2-test-final/results.json",
+      "config": {
+        "mode": "policy",
+        "split": "test",
+        "seed": 100,
+        "episodes": 10,
+        "max_steps": 6,
+        "max_seconds": 180,
+        "attempts": 100,
+        "output": "robotiq-results/mixed-v2-test-final",
+        "data_dir": "robotiq-dataset/mixed-v2",
+        "train_dir": "robotiq-training",
+        "checkpoint": 1000,
+        "name": "mixed-tower-v2",
+        "disp": false,
+        "decoder": "rgbd-refined-v4-feasible-picks",
+        "scene_version": 2,
+        "controller": "robotiq-bilateral-contact-hold-v3",
+        "checkpoint_sha256": {
+          "attention": "33470ecf4b148497f41bc2f2bf01699435cd12eae9c4cc5708ca0e1d5b211a2d",
+          "transport": "501af4f657dd8546382511c37128c4e6b40469412bf36b4daa7e0e50570817a0"
+        },
+        "contact_preload": 0.02
+      },
+      "summary": {
+        "episodes": 10,
+        "successes": 6,
+        "success_rate": 0.6,
+        "success_rate_wilson_95": [
+          0.3126695474501864,
+          0.8318224187964902
+        ],
+        "mean_stable_objects": 2,
+        "mean_episode_seconds": 49.22171494999784,
+        "mean_actions": 4.1,
+        "actions": 41,
+        "grasp_successes": 32,
+        "grasp_success_rate": 0.7804878048780488,
+        "actions_increasing_stable_count": 23,
+        "collapses": 0,
+        "time_limits": 0,
+        "motion_timeouts": 0,
+        "saved_demos": 0,
+        "errors": 3
+      },
+      "episodes": [
+        {
+          "seed": 100,
+          "success": false,
+          "stable_objects": 0,
+          "actions": 5,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 101,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 3,
+          "error": null
+        },
+        {
+          "seed": 102,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 4,
+          "error": null
+        },
+        {
+          "seed": 103,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 3,
+          "error": null
+        },
+        {
+          "seed": 104,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 4,
+          "error": null
+        },
+        {
+          "seed": 105,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 6,
+          "error": null
+        },
+        {
+          "seed": 106,
+          "success": false,
+          "stable_objects": 2,
+          "actions": 6,
+          "error": null
+        },
+        {
+          "seed": 107,
+          "success": false,
+          "stable_objects": 0,
+          "actions": 3,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 108,
+          "success": false,
+          "stable_objects": 0,
+          "actions": 4,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 109,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 3,
+          "error": null
+        }
+      ]
+    },
+    "oracle": {
+      "raw_report": "robotiq-results/mixed-v2-oracle-test-final/results.json",
+      "config": {
+        "mode": "oracle",
+        "split": "test",
+        "seed": 100,
+        "episodes": 10,
+        "max_steps": 6,
+        "max_seconds": 180,
+        "attempts": 100,
+        "output": "robotiq-results/mixed-v2-oracle-test-final",
+        "data_dir": "robotiq-dataset/mixed-v2",
+        "train_dir": "robotiq-training",
+        "checkpoint": 1000,
+        "name": "mixed-tower-v2",
+        "disp": false,
+        "decoder": "ground-truth oracle",
+        "scene_version": 2,
+        "controller": "robotiq-bilateral-contact-hold-v3",
+        "contact_preload": 0.02
+      },
+      "summary": {
+        "episodes": 10,
+        "successes": 9,
+        "success_rate": 0.9,
+        "success_rate_wilson_95": [
+          0.5958436145024278,
+          0.9821242504842788
+        ],
+        "mean_stable_objects": 2.7,
+        "mean_episode_seconds": 19.8780175300024,
+        "mean_actions": 3.3,
+        "actions": 33,
+        "grasp_successes": 33,
+        "grasp_success_rate": 1,
+        "actions_increasing_stable_count": 29,
+        "collapses": 0,
+        "time_limits": 0,
+        "motion_timeouts": 0,
+        "saved_demos": 0,
+        "errors": 1
+      },
+      "episodes": [
+        {
+          "seed": 100,
+          "success": false,
+          "stable_objects": 0,
+          "actions": 3,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 101,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 3,
+          "error": null
+        },
+        {
+          "seed": 102,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 4,
+          "error": null
+        },
+        {
+          "seed": 103,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 3,
+          "error": null
+        },
+        {
+          "seed": 104,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 3,
+          "error": null
+        },
+        {
+          "seed": 105,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 3,
+          "error": null
+        },
+        {
+          "seed": 106,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 4,
+          "error": null
+        },
+        {
+          "seed": 107,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 3,
+          "error": null
+        },
+        {
+          "seed": 108,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 4,
+          "error": null
+        },
+        {
+          "seed": 109,
+          "success": true,
+          "stable_objects": 3,
+          "actions": 3,
+          "error": null
+        }
+      ]
+    }
+  },
+  "checks": {
+    "unit_tests_passed": 15,
+    "pip_check": "No broken requirements found",
+    "pyramid_oracle_regression": {
+      "seed": 0,
+      "success": true,
+      "max_xyz_error_metres": 0.002229833472790932,
+      "artifact": "robotiq-results/pyramid-regression-preload002"
+    }
+  },
+  "interpretation": [
+    "Transporter predicts pick/place XY; RGB-D geometry supplies grasp centre refinement, yaw, heights and a feasible-pick mask. It is not fully learned motor control.",
+    "Policy receives RGB-D only. Oracle and scoring use privileged simulator state.",
+    "All requested test scenes, including runtime errors, count in the denominator. Errors receive zero verified stable objects because the final hold could not be verified.",
+    "Success requires all three objects to pass the two-second final hold, within six actions and the between-action 180-second budget.",
+    "Episode time is local simulation wall time excluding model loading, not real-robot cycle time.",
+    "The collapse counter only detects decreases between completed actions; it does not prove no physical falls occurred.",
+    "Ten scenes from known shape families are preliminary evidence, not an unseen-shape or arbitrary-clutter benchmark.",
+    "Raw datasets, checkpoints, action traces and screenshots remain local and Git-ignored. This report preserves compact results and artifact identifiers."
+  ]
+}

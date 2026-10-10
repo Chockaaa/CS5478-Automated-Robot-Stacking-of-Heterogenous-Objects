@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "status": "Development retention gate failed; no controller promotion or retraining",
+  "plan": "validation/retention-stage-plan.json",
+  "raw_report": "robotiq-results/retention-isolation-baseline-v1/results.json",
+  "summary": {
+    "cases": 108,
+    "successes": 32,
+    "rate": 0.2962962962962963,
+    "wilson_95": [
+      0.21837679573361612,
+      0.3882096622569705
+    ],
+    "first_failures": {
+      "short_lift:failed_short_lift": 2,
+      "high_lift:translation_slip": 12,
+      "transfer:contact_loss": 10,
+      "high_lift:contact_loss": 18,
+      "lower:rotation_slip": 4,
+      "lower:contact_loss": 3,
+      "short_hold:rotation_slip": 2,
+      "lower:translation_slip": 5,
+      "transport_hold:translation_slip": 4,
+      "transfer:rotation_slip": 2,
+      "transfer:translation_slip": 6,
+      "short_hold:contact_loss": 2,
+      "high_lift:rotation_slip": 4,
+      "short_hold:translation_slip": 2
+    },
+    "families": {
+      "cube": {
+        "cases": 36,
+        "successes": 10,
+        "rate": 0.2777777777777778
+      },
+      "cuboid": {
+        "cases": 36,
+        "successes": 15,
+        "rate": 0.4166666666666667
+      },
+      "cylinder": {
+        "cases": 36,
+        "successes": 7,
+        "rate": 0.19444444444444445
+      }
+    },
+    "errors": 0,
+    "timeouts": 0,
+    "complete_development_matrix": true,
+    "development_gate_passed": false
+  },
+  "report_sha256": "4752e3c4f52e7e32dcf0b6d2cf014d2608503468de45026fdec5cc407d822c4c",
+  "source_sha256": "c66131d9c21c013859e19630ce339ea36b3eb9b6403b9e8419ce3678da2a1974",
+  "controller_sha256": "522f700a9e8d4c2403ff4f18b85bd2f2d1e012950cd70409c0b91fcebc732079",
+  "tests_passed": 32,
+  "interpretation": [
+    "32/108 complete strict-retention cases, not a tower-success rate.",
+    "Cube 10/36, cuboid 15/36, cylinder 7/36. No exception or timeout.",
+    "Higher lift accounts for the largest first-failure category: 34/76 failed cases (18 contact loss, 12 translation slip, 4 rotation slip).",
+    "Protocol deliberately adds short lift and holds; do not compare directly with production primitive or historical stacking results.",
+    "20 Hz observations can miss between-sample events; drift is measured relative to the gripper body after short lift.",
+    "Fixed matrix uses three coupled size presets, not full independent size combinations; Wilson interval is descriptive for this grid.",
+    "Simulator ground truth is diagnostic only. No model training, production-controller change, friction increase or attachment was used."
+  ],
+  "next_step": "Inspect per-case pad force, driver angle, clearance and relative-pose traces during the higher lift; then test one targeted controller change against this frozen diagnostic baseline."
+}

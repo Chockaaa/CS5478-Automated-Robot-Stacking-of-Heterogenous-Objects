@@ -10,6 +10,10 @@ The robot-to-gripper mount and internal joint couplings are constraints.
 
 Task: `stack-robotiq`. Agent: `transporter-robotiq`.
 
+This page describes the original **pyramid** baseline. For the separate mixed
+cube/cuboid/cylinder **tower** task and its training/evaluation commands, see
+[the heterogeneous stacking README](../README.md#mixed-object-training-and-end-to-end-testing).
+
 This is an initial six-cube pyramid task: cubes are 40 mm and initially upright
 with aligned yaw, and pick locations vary. It intentionally matches the original
 Transporter's single pick-angle attention model. Arbitrary object sizes,
@@ -30,12 +34,27 @@ The scripted oracle is used only to generate demonstrations and test mechanics.
 
 The `ravens-transporter` Conda environment was created on this computer with
 Python 3.10, Conda PyBullet, TensorFlow 2.10.1 and TensorFlow Addons 0.18.0.
-TensorFlow currently uses CPU; its CUDA libraries are not installed here.
+The original pyramid smoke tests used CPU. GPU training was subsequently
+validated on this machine's RTX 4050 with environment-local CUDA 11.8 and
+cuDNN 8.9.7; the base environment file remains usable without a GPU.
 Existing environments were preserved. To recreate dependencies elsewhere:
 
 ```powershell
 conda env create -f environment-robotiq.yml
 ```
+
+Optional GPU libraries for the tested native-Windows setup:
+
+```powershell
+conda install -n ravens-transporter -c conda-forge --freeze-installed cudatoolkit=11.8 cudnn=8.9.7 -y
+```
+
+TensorFlow 2.10 is the last native-Windows CUDA-enabled release
+([TensorFlow installation guide](https://www.tensorflow.org/install/pip)).
+The older CUDA 11.2/cuDNN 8.1 combination failed in cuSolver on this laptop;
+CUDA 11.8/cuDNN 8.9.7 completed training. This newer runtime combination is
+locally tested, not the original TensorFlow 2.10 tested-build configuration.
+See the [NVIDIA support matrix](https://docs.nvidia.com/deeplearning/cudnn/archives/cudnn-897/support-matrix/index.html).
 
 Run all commands below from the repository root:
 

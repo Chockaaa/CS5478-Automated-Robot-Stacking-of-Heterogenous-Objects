@@ -29,9 +29,11 @@ from ravens.agents.transporter import OriginalTransporterAgent
 from ravens.agents.transporter import PerPixelLossTransporterAgent
 from ravens.agents.transporter_6dof import Transporter6dAgent
 from ravens.agents.transporter_robotiq import RobotiqTransporterAgent
+from ravens.agents.transporter_heterogeneous import HeterogeneousTransporterAgent
 
 names = {'dummy': DummyAgent,
          'transporter-robotiq': RobotiqTransporterAgent,
+         'transporter-heterogeneous': HeterogeneousTransporterAgent,
          'transporter': OriginalTransporterAgent,
          'transporter_6d': Transporter6dAgent,
          'no_transport': NoTransportTransporterAgent,

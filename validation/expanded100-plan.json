@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "status": "planned_before_collection",
+  "question": "Does an expanded successful-demonstration dataset improve the fixed Transporter/RGB-D baseline?",
+  "dataset": "robotiq-dataset/mixed-v2-expanded100",
+  "source_dataset": "robotiq-dataset/mixed-v2",
+  "existing_demonstrations": 30,
+  "new_successful_demonstrations_target": 70,
+  "total_target": 100,
+  "new_training_start_seed": 50,
+  "maximum_new_attempts": 200,
+  "scene_version": 2,
+  "controller": "baseline",
+  "collection_contact_preload": 0.02,
+  "original_demonstration_contact_preload": 0.01,
+  "model": "mixed-tower-expanded100",
+  "training": {
+    "from_scratch": true,
+    "seed": 0,
+    "steps": 3000,
+    "checkpoint_interval": 1000,
+    "compile_models": true,
+    "architecture_and_decoder": "unchanged from mixed-tower-v2",
+    "filter": "successful episodes; progress-making actions only"
+  },
+  "validation": {
+    "initial_seeds": [0, 1, 2, 3, 4],
+    "checkpoints": [1000, 2000, 3000],
+    "selection": "highest complete-tower count; tie: higher mean verified stable objects, then earlier checkpoint",
+    "paired_confirmation_seeds": {"first": 5, "last": 24},
+    "reference_model": "mixed-tower-v2 checkpoint 1000",
+    "unchanged_budget": "6 actions; 180 seconds checked between actions; 2-second final hold"
+  },
+  "test": {
+    "reserved_seeds": {"first": 1000, "last": 1099},
+    "condition": "Only after validation and a frozen candidate; never used for selection"
+  },
+  "caveats": [
+    "More data does not directly fix physical slips or pad clearance.",
+    "Original and new demonstrations use different contact preloads; this is a practical expanded-data experiment, not an isolated data-size causal ablation.",
+    "Training-update budget and uninterrupted optimizer history differ from the historical model.",
+    "Successful-demo filtering retains an easier-scene selection bias.",
+    "No original data, checkpoint or result is overwritten."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "status": "criteria declared before retention benchmark execution",
+  "purpose": "Isolate physical retention in Ravens before further Transporter training",
+  "development_matrix": "108 cases: 3 families x 3 sizes x 3 grasp yaws x 2 pick positions x 2 transfer distances",
+  "diagnostic_protocol": "Ground-truth centered grasp, short lift, 0.5-second hold, high lift, transfer, 2-second hold, lowering; baseline finger control. This deliberately differs from the production primitive and is not a policy evaluation.",
+  "retention_definition": "After a successful short lift, bilateral contact at every sampled checkpoint (20 Hz), relative object translation <=5 mm and rotation <=10 degrees from the short-lift reference through lowering; no timeout or exception. Sampling cannot exclude slips between samples.",
+  "promotion_gates": {
+    "development": "At least 95% complete retention overall and at least 90% in each object family; failures and timeouts included. This is a screening gate, not held-out evidence.",
+    "fresh_retention": "Freeze candidate; 300 new randomized cases (100 per family), >=95% overall and >=90% per family, with confidence intervals and geometry-specific failures reported. Do not tune on these cases.",
+    "stacking_validation": "Compare frozen controller with baseline on matching validation scenes, with fixed Transporter weights; improve completion without hiding errors or increasing action/time budgets.",
+    "stage_clearance": "Frozen final policy/controller: >=90/100 complete towers on reserved test seeds 1000-1099, under existing 6-action, 180-second and 2-second hold protocol. Report uncertainty and all failures; not a claim of real-world reliability."
+  },
+  "training_condition": "Train a new model only after physical retention improves; preserve current datasets, models and scoring.",
+  "not_in_scope": ["new simulator", "object attachment", "pose snapping", "unbounded retries", "new VLM or search policy"]
+}

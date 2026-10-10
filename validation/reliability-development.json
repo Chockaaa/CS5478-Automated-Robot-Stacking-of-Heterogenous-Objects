@@ -1,0 +1,524 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "stage": "Reliable manipulation: initial diagnostic screening",
+  "status": "No improvement demonstrated; retain baseline",
+  "scope": "Oracle controller ablations, not Transporter policy evaluation",
+  "split": "validation",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "experiments": [
+    {
+      "profile": "baseline",
+      "raw_report": "robotiq-results/reliability-baseline-oracle-dev/results.json",
+      "config": {
+        "mode": "oracle",
+        "split": "validation",
+        "seed": 0,
+        "episodes": 5,
+        "max_steps": 6,
+        "max_seconds": 180,
+        "attempts": 100,
+        "output": "robotiq-results/reliability-baseline-oracle-dev",
+        "data_dir": "robotiq-dataset/mixed-v2",
+        "train_dir": "robotiq-training",
+        "checkpoint": 1000,
+        "name": "mixed-tower-v2",
+        "disp": false,
+        "controller": "baseline",
+        "decoder": "ground-truth oracle",
+        "scene_version": 2,
+        "controller_version": "robotiq-bilateral-contact-hold-v3",
+        "contact_preload": 0.02
+      },
+      "episodes": [
+        {
+          "seed": 0,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 1,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 2,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 3,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 4,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        }
+      ],
+      "summary": {
+        "episodes": 5,
+        "successes": 4,
+        "success_rate": 0.8,
+        "success_rate_wilson_95": [
+          0.3755282641185388,
+          0.9637768390302125
+        ],
+        "mean_stable_objects": 2.4,
+        "mean_episode_seconds": 16.315576760016846,
+        "mean_actions": 3.6,
+        "actions": 18,
+        "grasp_successes": 16,
+        "grasp_success_rate": 0.8888888888888888,
+        "actions_increasing_stable_count": 14,
+        "collapses": 0,
+        "time_limits": 0,
+        "motion_timeouts": 0,
+        "saved_demos": 0,
+        "errors": 1
+      },
+      "promoted": true
+    },
+    {
+      "profile": "clearance-v1",
+      "raw_report": "robotiq-results/reliability-clearance-v1-oracle-dev/results.json",
+      "config": {
+        "mode": "oracle",
+        "split": "validation",
+        "seed": 0,
+        "episodes": 5,
+        "max_steps": 6,
+        "max_seconds": 180,
+        "attempts": 100,
+        "output": "robotiq-results/reliability-clearance-v1-oracle-dev",
+        "data_dir": "robotiq-dataset/mixed-v2",
+        "train_dir": "robotiq-training",
+        "checkpoint": 1000,
+        "name": "mixed-tower-v2",
+        "disp": false,
+        "controller": "clearance-v1",
+        "decoder": "ground-truth oracle",
+        "scene_version": 2,
+        "controller_version": "robotiq-clearance-v1",
+        "contact_preload": 0.02
+      },
+      "episodes": [
+        {
+          "seed": 0,
+          "success": false,
+          "stable_objects": 1,
+          "error": null
+        },
+        {
+          "seed": 1,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 2,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 3,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 4,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        }
+      ],
+      "summary": {
+        "episodes": 5,
+        "successes": 1,
+        "success_rate": 0.2,
+        "success_rate_wilson_95": [
+          0.03622316096978745,
+          0.6244717358814613
+        ],
+        "mean_stable_objects": 0.8,
+        "mean_episode_seconds": 18.183712179993744,
+        "mean_actions": 4.6,
+        "actions": 23,
+        "grasp_successes": 20,
+        "grasp_success_rate": 0.8695652173913043,
+        "actions_increasing_stable_count": 10,
+        "collapses": 0,
+        "time_limits": 0,
+        "motion_timeouts": 0,
+        "saved_demos": 0,
+        "errors": 3
+      },
+      "promoted": false
+    },
+    {
+      "profile": "guarded-v1",
+      "raw_report": "robotiq-results/reliability-guarded-v1-oracle-dev/results.json",
+      "config": {
+        "mode": "oracle",
+        "split": "validation",
+        "seed": 0,
+        "episodes": 5,
+        "max_steps": 6,
+        "max_seconds": 180,
+        "attempts": 100,
+        "output": "robotiq-results/reliability-guarded-v1-oracle-dev",
+        "data_dir": "robotiq-dataset/mixed-v2",
+        "train_dir": "robotiq-training",
+        "checkpoint": 1000,
+        "name": "mixed-tower-v2",
+        "disp": false,
+        "controller": "guarded-v1",
+        "decoder": "ground-truth oracle",
+        "scene_version": 2,
+        "controller_version": "robotiq-guarded-v1",
+        "contact_preload": 0.02
+      },
+      "episodes": [
+        {
+          "seed": 0,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 1,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 2,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 3,
+          "success": false,
+          "stable_objects": 0,
+          "error": null
+        },
+        {
+          "seed": 4,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        }
+      ],
+      "summary": {
+        "episodes": 5,
+        "successes": 2,
+        "success_rate": 0.4,
+        "success_rate_wilson_95": [
+          0.1176182311592533,
+          0.769280067791163
+        ],
+        "mean_stable_objects": 1.2,
+        "mean_episode_seconds": 16.279123979981524,
+        "mean_actions": 3.8,
+        "actions": 19,
+        "grasp_successes": 15,
+        "grasp_success_rate": 0.7894736842105263,
+        "actions_increasing_stable_count": 11,
+        "collapses": 1,
+        "time_limits": 0,
+        "motion_timeouts": 0,
+        "saved_demos": 0,
+        "errors": 2
+      },
+      "promoted": false
+    },
+    {
+      "profile": "retention-v1",
+      "raw_report": "robotiq-results/reliability-retention-v1-oracle-dev/results.json",
+      "config": {
+        "mode": "oracle",
+        "split": "validation",
+        "seed": 0,
+        "episodes": 5,
+        "max_steps": 6,
+        "max_seconds": 180,
+        "attempts": 100,
+        "output": "robotiq-results/reliability-retention-v1-oracle-dev",
+        "data_dir": "robotiq-dataset/mixed-v2",
+        "train_dir": "robotiq-training",
+        "checkpoint": 1000,
+        "name": "mixed-tower-v2",
+        "disp": false,
+        "controller": "retention-v1",
+        "decoder": "ground-truth oracle",
+        "scene_version": 2,
+        "controller_version": "robotiq-retention-v1",
+        "contact_preload": 0.03
+      },
+      "episodes": [
+        {
+          "seed": 0,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 1,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 2,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 3,
+          "success": false,
+          "stable_objects": 2,
+          "error": null
+        },
+        {
+          "seed": 4,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        }
+      ],
+      "summary": {
+        "episodes": 5,
+        "successes": 2,
+        "success_rate": 0.4,
+        "success_rate_wilson_95": [
+          0.1176182311592533,
+          0.769280067791163
+        ],
+        "mean_stable_objects": 1.6,
+        "mean_episode_seconds": 16.24643601999851,
+        "mean_actions": 3.8,
+        "actions": 19,
+        "grasp_successes": 16,
+        "grasp_success_rate": 0.8421052631578947,
+        "actions_increasing_stable_count": 12,
+        "collapses": 0,
+        "time_limits": 0,
+        "motion_timeouts": 0,
+        "saved_demos": 0,
+        "errors": 2
+      },
+      "promoted": false
+    },
+    {
+      "profile": "slow-v1",
+      "raw_report": "robotiq-results/reliability-slow-v1-oracle-dev/results.json",
+      "config": {
+        "mode": "oracle",
+        "split": "validation",
+        "seed": 0,
+        "episodes": 5,
+        "max_steps": 6,
+        "max_seconds": 180,
+        "attempts": 100,
+        "output": "robotiq-results/reliability-slow-v1-oracle-dev",
+        "data_dir": "robotiq-dataset/mixed-v2",
+        "train_dir": "robotiq-training",
+        "checkpoint": 1000,
+        "name": "mixed-tower-v2",
+        "disp": false,
+        "controller": "slow-v1",
+        "decoder": "ground-truth oracle",
+        "scene_version": 2,
+        "controller_version": "robotiq-slow-v1",
+        "contact_preload": 0.02
+      },
+      "episodes": [
+        {
+          "seed": 0,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 1,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 2,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 3,
+          "success": false,
+          "stable_objects": 1,
+          "error": null
+        },
+        {
+          "seed": 4,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        }
+      ],
+      "summary": {
+        "episodes": 5,
+        "successes": 1,
+        "success_rate": 0.2,
+        "success_rate_wilson_95": [
+          0.03622316096978745,
+          0.6244717358814613
+        ],
+        "mean_stable_objects": 0.8,
+        "mean_episode_seconds": 17.458921340003144,
+        "mean_actions": 3.8,
+        "actions": 19,
+        "grasp_successes": 12,
+        "grasp_success_rate": 0.631578947368421,
+        "actions_increasing_stable_count": 10,
+        "collapses": 0,
+        "time_limits": 0,
+        "motion_timeouts": 0,
+        "saved_demos": 0,
+        "errors": 3
+      },
+      "promoted": false
+    },
+    {
+      "profile": "cartesian-v1",
+      "raw_report": "robotiq-results/retention-cartesian-v1-oracle-dev/results.json",
+      "config": {
+        "mode": "oracle",
+        "split": "validation",
+        "seed": 0,
+        "episodes": 5,
+        "max_steps": 6,
+        "max_seconds": 180,
+        "attempts": 100,
+        "output": "robotiq-results/retention-cartesian-v1-oracle-dev",
+        "data_dir": "robotiq-dataset/mixed-v2",
+        "train_dir": "robotiq-training",
+        "checkpoint": 1000,
+        "name": "mixed-tower-v2",
+        "disp": false,
+        "controller": "cartesian-v1",
+        "decoder": "ground-truth oracle",
+        "scene_version": 2,
+        "controller_version": "robotiq-cartesian-v1",
+        "contact_preload": 0.02
+      },
+      "episodes": [
+        {
+          "seed": 0,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 1,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 2,
+          "success": true,
+          "stable_objects": 3,
+          "error": null
+        },
+        {
+          "seed": 3,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        },
+        {
+          "seed": 4,
+          "success": false,
+          "stable_objects": 0,
+          "error": "RuntimeError: Scene did not settle within the task step limit."
+        }
+      ],
+      "summary": {
+        "episodes": 5,
+        "successes": 1,
+        "success_rate": 0.2,
+        "success_rate_wilson_95": [
+          0.03622316096978745,
+          0.6244717358814613
+        ],
+        "mean_stable_objects": 0.6,
+        "mean_episode_seconds": 22.635680719988887,
+        "mean_actions": 4.2,
+        "actions": 21,
+        "grasp_successes": 19,
+        "grasp_success_rate": 0.9047619047619048,
+        "actions_increasing_stable_count": 11,
+        "collapses": 0,
+        "time_limits": 0,
+        "motion_timeouts": 0,
+        "saved_demos": 0,
+        "errors": 4
+      },
+      "conclusion": "Not promoted: 1/5 full towers compared with recorded baseline 4/5 on the same validation seeds. Loaded 10 mm Cartesian waypoints alone did not improve this screen. No timeouts."
+    }
+  ],
+  "diagnosis": {
+    "matched_trace": "robotiq-results/reliability-trace-baseline-matched.json",
+    "seed": 4,
+    "observations": [
+      "Cylinder is retained after initial lift, but has fallen to the plane by the end of transfer.",
+      "Before nominal release, check_grasp is false; baseline still performs empty placement descent.",
+      "Closed pad AABB bottoms reached -0.001455 and -0.001177 metres; plane surface is -0.001 metres.",
+      "At the settling exception the cylinder is approximately at (-5.114, -2.371, 0.0184) metres, still rolling; the cube/cuboid support chain remains standing."
+    ],
+    "interpretation": "Evidence of transport retention loss and short-object pad clearance issues. Not proof that all failures share one cause."
+  },
+  "preserved": {
+    "default_controller": "baseline",
+    "policy_weights": "mixed-tower-v2 checkpoint 1000 unchanged",
+    "decoder": "rgbd-refined-v4-feasible-picks unchanged",
+    "success_thresholds": "unchanged",
+    "historical_test_report": "validation/heterogeneous-v2.json",
+    "fresh_test_scenes_used": 0,
+    "new_demonstrations": 0
+  },
+  "checks": {
+    "unit_tests_passed": 19
+  },
+  "limitations": [
+    "Only five reused validation scenes per candidate; not a held-out reliability estimate.",
+    "Runs sometimes overlapped locally; do not treat their wall times as a controlled timing comparison.",
+    "Diagnostic trace is oracle-only and not a final-hold benchmark.",
+    "Retention checks at waypoints do not prevent slips between waypoints; guarded-v1 is an unsuccessful experimental profile, not a safety guarantee.",
+    "Higher grasp_success can coexist with lower tower completion because the grasp metric checks retention after lifting only.",
+    "Expanded demonstrations, retraining and 100-scene evaluation remain pending."
+  ],
+  "next_steps": [
+    "Controlled size/yaw grasp-retention and pad-clearance suite.",
+    "Use that suite to improve grasp geometry and transport trajectories, then placement and bounded observation-based recovery.",
+    "Screen promising candidates on validation seeds 5-24; promote only with evidence beyond five-scene tuning.",
+    "Collect separate expanded demonstrations and select a new Transporter checkpoint on validation.",
+    "Freeze system; evaluate policy and oracle on fresh test seeds 1000-1099."
+  ],
+  "latest_unit_tests_passed": 28
+}
