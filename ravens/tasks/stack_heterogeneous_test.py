@@ -61,7 +61,8 @@ class SceneTest(unittest.TestCase):
                          p.GEOM_CYLINDER if obj['family'] == 'cylinder' else p.GEOM_BOX)
       self.assertEqual(task.evaluate()['stable_objects'], 0)
       action = task.oracle(env).act(obs, None)
-      self.assertEqual(set(action), {'pose0', 'pose1'})
+      self.assertEqual(set(action),
+                       {'pose0', 'pose1', 'grasp_height', 'grasp_width'})
       self.assertEqual(task.reward()[0], 0.)
     finally:
       env.close()

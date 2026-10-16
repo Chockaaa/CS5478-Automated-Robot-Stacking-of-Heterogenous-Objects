@@ -56,6 +56,10 @@ class Robotiq85:
                            targetPosition=angle, maxVelocity=.5,
                            force=self.grip_force, positionGain=.1)
 
+  def configure_grasp(self, width=None):
+    """Configure an observed grasp without changing the baseline controller."""
+    del width
+
   def _contacts(self):
     contacts = [{pt[2] for pt in p.getContactPoints(
         bodyA=self.body, linkIndexA=pad)
@@ -104,6 +108,28 @@ class RetentionRobotiq85(Robotiq85):
   contact_preload = .03
 
 
+class SizeAwareRobotiq85(Robotiq85):
+  """Experimental bounded force schedule from observed jaw closing width."""
+  min_grip_force = 2.
+  max_grip_force = 3.
+
+  def configure_grasp(self, width=None):
+    if width is None or not math.isfinite(width) or not .02 <= width <= .06:
+      raise ValueError('size-aware grasp requires an observed width in [20, 60] mm')
+    # Retain the baseline force through 40 mm, then linearly add at most 1 N.
+    self.grip_force = min(self.max_grip_force, self.min_grip_force +
+                          max(0., width - .04) / .01)
+
+
+class SizeAwareV2Robotiq85(SizeAwareRobotiq85):
+  """Narrow force increase for the wide-object failure regime only."""
+  def configure_grasp(self, width=None):
+    if width is None or not math.isfinite(width) or not .02 <= width <= .06:
+      raise ValueError('size-aware grasp requires an observed width in [20, 60] mm')
+    self.grip_force = min(self.max_grip_force, self.min_grip_force +
+                          max(0., width - .048) / .002)
+
+
 class RobotiqPickPlace:
   """Surface pick + support-surface place, matching RGB-D agent outputs.
 
@@ -148,7 +174,9 @@ class AdaptiveRobotiqPickPlace:
   pick_height_limits = (.025, .065)
 
   profiles = ('baseline', 'clearance-v1', 'guarded-v1', 'retention-v1', 'slow-v1',
-              'cartesian-v1')
+              'cartesian-v1', 'size-aware-v1', 'size-aware-v2', 'size-aware-v3',
+              'size-aware-v4', 'monitored-v1', 'placement-v1', 'accel-v1',
+              'cartesian-accel-v2')
 
   def __init__(self, profile='baseline'):
     if profile not in self.profiles:
@@ -156,7 +184,51 @@ class AdaptiveRobotiqPickPlace:
     self.profile = profile
     self.last_result = {}
 
-  def __call__(self, movej, movep, ee, pose0, pose1):
+  @staticmethod
+  def size_aware_pick_height(height, width):
+    if (not math.isfinite(height) or not math.isfinite(width) or
+        not .025 <= height <= .065 or not .02 <= width <= .06):
+      raise ValueError('invalid observed grasp geometry')
+    # The pad bottom is about 22 mm below the commanded TCP in this model.
+    # A 24 mm floor keeps it clear of the table; otherwise target the object's
+    # vertical centre instead of a fixed distance below its top surface.
+    return max(.024, height / 2)
+
+  @staticmethod
+  def size_aware_v2_pick_height(height, width):
+    if (not math.isfinite(height) or not math.isfinite(width) or
+        not .025 <= height <= .065 or not .02 <= width <= .06):
+      raise ValueError('invalid observed grasp geometry')
+    if height <= .035:
+      return max(.022, height - .016)  # Clear table without v1's 5 mm jump.
+    if height >= .05 and width >= .048:
+      return max(.024, height / 2)  # Centre only in the wide/tall regime.
+    return max(.019, height - .016)  # Preserve the successful baseline depth.
+
+  @staticmethod
+  def size_aware_v3_pick_height(height, width):
+    """Rejected lower-grasp ablation retained for result reproducibility."""
+    if (not math.isfinite(height) or not math.isfinite(width) or
+        not .025 <= height <= .065 or not .02 <= width <= .06):
+      raise ValueError('invalid observed grasp geometry')
+    if height >= .05 and width >= .048:
+      return max(.024, height / 2)
+    return max(.019, height - .017)
+
+  @staticmethod
+  def size_aware_v4_pick_height(height, width):
+    """Use baseline depth normally and centre wide/tall grasps."""
+    if (not math.isfinite(height) or not math.isfinite(width) or
+        not .025 <= height <= .065 or not .02 <= width <= .06):
+      raise ValueError('invalid observed grasp geometry')
+    if height >= .05 and width >= .048:
+      return max(.024, height / 2)
+    # Initial object centres sit about 1 mm over the plane, so this reproduces
+    # baseline top-minus-17-mm grasping from an estimated object height.
+    return max(.019, height - .016)
+
+  def __call__(self, movej, movep, ee, pose0, pose1,
+               grasp_height=None, grasp_width=None):
     del movej
     self.last_result = dict(grasp_success=False, timeout=False)
     top, support = float(pose0[0][2]), float(pose1[0][2])
@@ -169,6 +241,23 @@ class AdaptiveRobotiqPickPlace:
       self.last_result['failure_reason'] = 'unsupported_loaded_rotation'
       return False
     pick_z = max(.019, top - .017)
+    if self.profile in ('size-aware-v1', 'size-aware-v2', 'size-aware-v3',
+                        'size-aware-v4'):
+      try:
+        geometry = ({
+            'size-aware-v1': self.size_aware_pick_height,
+            'size-aware-v2': self.size_aware_v2_pick_height,
+            'size-aware-v3': self.size_aware_v3_pick_height,
+            'size-aware-v4': self.size_aware_v4_pick_height,
+        }[self.profile])
+        pick_z = geometry(float(grasp_height), float(grasp_width))
+        ee.configure_grasp(float(grasp_width))
+      except (TypeError, ValueError):
+        self.last_result['invalid_geometry'] = True
+        return False
+      self.last_result.update(grasp_height=float(grasp_height),
+                              grasp_width=float(grasp_width), pick_z=pick_z,
+                              grip_force=ee.grip_force)
     if self.profile == 'clearance-v1':
       # Experimental shallower grasp: keep the pads clear of the table for
       # short objects. Uses the observed top only, never a simulator pose.
@@ -177,8 +266,31 @@ class AdaptiveRobotiqPickPlace:
     clearance = max(.30, place_z + .12)
     def pose_at(pose, height):
       return ((pose[0][0], pose[0][1], height), pose[1])
-    def move(pose):
-      timeout = movep(pose, speed=.001 if self.profile == 'slow-v1' else .002)
+    monitor_misses = 0
+    monitor_stage = None
+    monitor_lost = False
+    def monitor_contact():
+      nonlocal monitor_misses, monitor_lost
+      if ee.check_grasp():
+        monitor_misses = 0
+        return True
+      monitor_misses += 1
+      if monitor_misses < 12:
+        return True
+      monitor_lost = True
+      self.last_result['continuous_monitor'] = True
+      self.last_result['monitor_miss_steps'] = monitor_misses
+      self.last_result['failure_reason'] = 'lost_grasp_during_' + monitor_stage
+      return False
+    def move(pose, monitor=None, acceleration=None, cartesian_limits=None):
+      kwargs = dict(speed=.001 if self.profile == 'slow-v1' else .002)
+      if monitor is not None:
+        kwargs['monitor'] = monitor
+      if acceleration is not None:
+        kwargs['acceleration'] = acceleration
+      if cartesian_limits is not None:
+        kwargs['cartesian_speed'], kwargs['cartesian_acceleration'] = cartesian_limits
+      timeout = movep(pose, **kwargs)
       if timeout:
         self.last_result['timeout'] = True
         ee.release()
@@ -190,7 +302,31 @@ class AdaptiveRobotiqPickPlace:
         self.last_result['failure_reason'] = 'lost_grasp_' + stage
         ee.release()
       return result
-    def loaded_move(start, end):
+    def loaded_move(start, end, stage):
+      nonlocal monitor_misses, monitor_stage
+      monitor_misses, monitor_stage = 0, stage
+      if self.profile in ('monitored-v1', 'placement-v1', 'accel-v1',
+                          'cartesian-accel-v2'):
+        if self.profile == 'placement-v1' and stage == 'lower':
+          distance = abs(end[0][2] - start[0][2])
+          count = max(1, math.ceil(distance / .01))
+          for index in range(1, count + 1):
+            fraction = index / count
+            xyz = tuple(a + fraction*(b-a) for a, b in zip(start[0], end[0]))
+            timeout = move((xyz, end[1]), monitor=monitor_contact)
+            if timeout or monitor_lost:
+              if monitor_lost:
+                ee.release()
+              return timeout
+          return False
+        timeout = move(
+            end, monitor=monitor_contact,
+            acceleration=.00005 if self.profile == 'accel-v1' else None,
+            cartesian_limits=(.08, .4)
+            if self.profile == 'cartesian-accel-v2' else None)
+        if monitor_lost:
+          ee.release()
+        return timeout
       if self.profile != 'cartesian-v1':
         return move(end)
       # Constrain the loaded path with <=10 mm Cartesian waypoints rather
@@ -221,26 +357,42 @@ class AdaptiveRobotiqPickPlace:
         return True
       if not retained('after_short_lift'):
         return False
-    if loaded_move(pose_at(pose0, pick_z), pose_at(pose0, clearance)):
+    if loaded_move(pose_at(pose0, pick_z), pose_at(pose0, clearance), 'lift'):
       return True
+    if monitor_lost:
+      return False
     self.last_result['grasp_success'] = bool(ee.check_grasp())
     if not self.last_result['grasp_success']:
       self.last_result['failure_reason'] = 'lost_grasp_after_lift'
       ee.release()
       return False
-    if loaded_move(pose_at(pose0, clearance), pose_at(pose1, clearance)):
+    if loaded_move(pose_at(pose0, clearance), pose_at(pose1, clearance),
+                   'transfer'):
       return True
+    if monitor_lost:
+      return False
     if self.profile == 'cartesian-v1':
       self.last_result['after_transfer'] = bool(ee.check_grasp())
     if self.profile == 'guarded-v1' and not retained('after_transfer'):
       return False
-    if loaded_move(pose_at(pose1, clearance), pose_at(pose1, place_z)):
+    if loaded_move(pose_at(pose1, clearance), pose_at(pose1, place_z),
+                   'lower'):
       return True
+    if monitor_lost:
+      return False
     if self.profile == 'cartesian-v1':
       self.last_result['before_release'] = bool(ee.check_grasp())
     if self.profile == 'guarded-v1' and not retained('before_release'):
       if move(pose_at(pose1, clearance)):
         return True
       return False
+    if self.profile == 'placement-v1':
+      monitor_misses, monitor_stage = 0, 'pre_release_hold'
+      for _ in range(120):
+        p.stepSimulation()
+        if not monitor_contact():
+          ee.release()
+          return False
+      self.last_result['pre_release_hold'] = True
     ee.release()
     return move(pose_at(pose1, clearance))

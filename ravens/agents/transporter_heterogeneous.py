@@ -74,6 +74,7 @@ class HeterogeneousTransporterAgent(TransporterAgent):
       if np.linalg.norm(nearest - grasp_pixel) <= radius:
         label = labels[tuple(nearest)]
     yaw = 0.
+    grasp_width = .04  # Conservative fallback if fine component recovery fails.
     if label:
       points = np.argwhere(labels == label)
       if len(points) >= 6:
@@ -83,6 +84,7 @@ class HeterogeneousTransporterAgent(TransporterAgent):
         edge = edges[np.argmax(np.linalg.norm(edges, axis=1))]
         yaw = float(np.arctan2(edge[1], edge[0]) + np.pi / 2)
         sides = sorted(rect[1])
+        grasp_width = float((sides[0] + 1) * self.geometry_pix_size)
         period = np.pi / 2 if sides[1] < 1.15 * max(sides[0], 1) else np.pi
         yaw = (yaw + period/2) % period - period/2
         occupancy = len(points) / max((sides[0]+1)*(sides[1]+1), 1)
@@ -97,7 +99,8 @@ class HeterogeneousTransporterAgent(TransporterAgent):
     support = support[support > 0]
     dest[2] = max(0., float(np.median(support)) - table_height) if support.size else 0.
     quat = utils.eulerXYZ_to_quatXYZW((0, 0, yaw))
-    return dict(pose0=(xyz, quat), pose1=(dest, quat))
+    return dict(pose0=(xyz, quat), pose1=(dest, quat),
+                grasp_height=float(xyz[2]), grasp_width=grasp_width)
 
   def get_geometry_heightmap(self, obs):
     _, heightmap = utils.get_fused_heightmap(

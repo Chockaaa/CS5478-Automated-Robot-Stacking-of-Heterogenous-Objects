@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-11",
+  "stage": "Reliable manipulation: size-aware grasp development",
+  "status": "Rejected for promotion; baseline controller and Transporter weights retained",
+  "protocol": "retention-diagnostic-v1",
+  "baseline": {
+    "raw_report": "robotiq-results/retention-isolation-baseline-v1/results.json",
+    "successes": 32,
+    "cases": 108,
+    "families": {"cube": 10, "cuboid": 15, "cylinder": 7}
+  },
+  "candidates": [
+    {
+      "profile": "size-aware-v2",
+      "raw_report": "robotiq-results/retention-size-aware-v2-full/results.json",
+      "sha256": "4604f8849db6b37544ce917518a9f8d6d4fb841be3dabb9bb635164a26e78620",
+      "successes": 44,
+      "cases": 108,
+      "families": {"cube": 11, "cuboid": 19, "cylinder": 14},
+      "paired": {"both_success": 18, "candidate_only": 26, "baseline_only": 14, "both_fail": 50},
+      "tower_screen": {
+        "raw_report": "robotiq-results/reliability-size-aware-v2-oracle-dev/results.json",
+        "sha256": "5410c3f577a2c61ceec709713900064986bf52fac3db63f29697404e45f8686b",
+        "split": "validation",
+        "seeds": [0, 1, 2, 3, 4],
+        "successes": 2,
+        "episodes": 5,
+        "matched_baseline_successes": 4
+      },
+      "decision": "Rejected: isolated retention improved without an aggregate family regression, but matched oracle tower completion regressed."
+    },
+    {
+      "profile": "size-aware-v3",
+      "raw_report": "robotiq-results/retention-size-aware-v3-full/results.json",
+      "sha256": "fa84d000acec767c37a400dd8cb07f47d075cd4375b87a1eb64a24a320071a99",
+      "successes": 38,
+      "cases": 108,
+      "families": {"cube": 8, "cuboid": 11, "cylinder": 19},
+      "decision": "Rejected before tower screening: a one-millimetre geometry-reference error regressed cube and cuboid retention."
+    },
+    {
+      "profile": "size-aware-v4",
+      "raw_report": "robotiq-results/retention-size-aware-v4-full/results.json",
+      "sha256": "5632cca5823e83b0c35f2a86caed45cc4372977e7c1cd8d171c38af0583a2a8b",
+      "successes": 45,
+      "cases": 108,
+      "rate": 0.4166666666666667,
+      "wilson_95": [0.32811348003440627, 0.5109446164162883],
+      "families": {"cube": 11, "cuboid": 19, "cylinder": 15},
+      "paired": {"both_success": 19, "candidate_only": 26, "baseline_only": 13, "both_fail": 50},
+      "errors": 0,
+      "timeouts": 0,
+      "development_gate_passed": false,
+      "tower_screen": {
+        "raw_report": "robotiq-results/reliability-size-aware-v4-oracle-dev/results.json",
+        "sha256": "f6bfdb086edd30281e69f9d254892f3bd2ba43b0619e561cb2ede370b14b036c",
+        "split": "validation",
+        "seeds": [0, 1, 2, 3, 4],
+        "successes": 3,
+        "episodes": 5,
+        "matched_baseline_successes": 4,
+        "errors": 2
+      },
+      "decision": "Rejected: best isolated retention result, but matched oracle tower completion remained below baseline and the absolute retention gate was not met."
+    }
+  ],
+  "implementation": {
+    "policy_geometry": "Height and jaw width are estimated from the same RGB-D component used for the Transporter pick; no simulator object pose is passed to policy inference.",
+    "oracle_geometry": "The diagnostic and oracle use known manifest geometry to isolate manipulation from perception.",
+    "wide_tall_rule": "For estimated height >= 50 mm and width >= 48 mm, target vertical centre and increase closing force from 2 N up to a bounded 3 N; otherwise preserve baseline-equivalent depth and 2 N force.",
+    "object_attachment_or_pose_snapping": false
+  },
+  "preserved": {
+    "default_controller": "baseline",
+    "policy_weights": "mixed-tower-v2 checkpoint 1000 unchanged",
+    "retraining_performed": false,
+    "fresh_test_scenes_used": 0
+  },
+  "limitations": [
+    "No aggregate object family regressed, but medium cubes and medium cylinders had fewer strict-retention successes than the historical baseline matrix.",
+    "The five-scene oracle tower screen is a paired development check, not a held-out reliability estimate.",
+    "The size-aware profiles were not evaluated with Transporter policy inference because none passed the controller promotion screen."
+  ],
+  "next_target": "Improve continuous retention and placement settling without changing ordinary-object grasp geometry; repeat the frozen matrix and matched tower screen before retraining."
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-11",
+  "stage": "Reliable manipulation: continuous retention and controlled release",
+  "status": "No controller promoted; baseline retained",
+  "diagnosis": {
+    "trace_seed_3": "robotiq-results/diagnose-size-aware-v4-seed3.json",
+    "trace_seed_4": "robotiq-results/diagnose-size-aware-v4-seed4.json",
+    "observations": [
+      "Both failed towers retained the final cylinder through the high lift.",
+      "Seed 3 lost the cylinder during lowering; seed 4 lost it during horizontal transfer.",
+      "The controller then continued an empty descent and release while each cylinder rolled out of bounds at approximately 0.23 to 0.25 metres per second.",
+      "Ordinary-object size-aware grasp heights were approximately 1 to 2 millimetres above the baseline TCP heights because manifest height and observed top use different reference frames."
+    ]
+  },
+  "experiments": [
+    {
+      "profile": "monitored-v1",
+      "behavior": "Check bilateral pad contact every physics step during loaded lift, transfer and lowering; abort after 12 consecutive misses and skip the remaining placement path.",
+      "raw_report": "robotiq-results/reliability-monitored-v1-oracle-dev/results.json",
+      "sha256": "f77a6254c8c8fb442ce7d37f454b032f349b553b8e9a81475d8c08f25078cf32",
+      "split": "validation",
+      "seeds": [0, 1, 2, 3, 4],
+      "successes": 4,
+      "episodes": 5,
+      "matched_baseline_successes": 4,
+      "decision": "Not promoted: contained and recovered the seed-3 loss, but did not beat baseline and seed 4 still exceeded the settling limit."
+    },
+    {
+      "profile": "placement-v1",
+      "behavior": "monitored-v1 plus at-most-10-mm Cartesian lowering waypoints and a 120-step grasped hold before release.",
+      "raw_report": "robotiq-results/reliability-placement-v1-oracle-dev/results.json",
+      "sha256": "e7e337f35e65be5663d8b364618fcaf6576c0ddde1f3d62bdaa3c802101f5c1c",
+      "split": "validation",
+      "seeds": [0, 1, 2, 3, 4],
+      "successes": 2,
+      "episodes": 5,
+      "matched_baseline_successes": 4,
+      "decision": "Rejected: controlled descent and dwell regressed matched tower completion."
+    },
+    {
+      "profile": "accel-v1",
+      "behavior": "Preserve baseline grasp and placement geometry; apply a discrete trapezoidal 0.00005-radian-per-step-squared limit to loaded joint motion with continuous contact monitoring.",
+      "raw_report": "robotiq-results/reliability-accel-v1-seeds3-4/results.json",
+      "sha256": "510b39f7c3660a44209e6625690dbc8b967fbc6c1a052ee686a27353ac9be21c",
+      "trace": "robotiq-results/diagnose-accel-v1-seed3-fixed.json",
+      "trace_sha256": "14b63f5d4208c403ced5aeb0d4af4e0e4468196ec1fabb0ea1533142da1f130f",
+      "split": "validation",
+      "seeds": [3, 4],
+      "successes": 1,
+      "episodes": 2,
+      "decision": "Rejected before the five-scene screen: seed 4 recovered, but seed 3 lost the cylinder during initial lift; the object was moving at about 0.38 m/s when monitoring aborted."
+    }
+  ],
+  "preserved": {
+    "default_controller": "baseline",
+    "policy_weights": "mixed-tower-v2 checkpoint 1000 unchanged",
+    "retraining_performed": false,
+    "fresh_test_scenes_used": 0
+  },
+  "next_target": "Use an end-effector-space velocity/acceleration controller or improve gripper contact mechanics; joint-target ramping alone was ineffective. Require more than 4/5 matched towers before a 20-scene validation."
+}

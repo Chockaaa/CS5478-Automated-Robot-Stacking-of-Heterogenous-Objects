@@ -140,6 +140,9 @@ def main():
                          inference_seconds=infer_time,
                          pose0=[[float(v) for v in part] for part in action['pose0']],
                          pose1=[[float(v) for v in part] for part in action['pose1']])
+          for key in ('grasp_height', 'grasp_width'):
+            if key in action:
+              details[key] = float(action[key])
           row['actions'].append(details)
           obs, reward, _, _ = env.step(action)
           # Fixed post-action settling includes angular motion.

@@ -70,6 +70,7 @@ class Environment(gym.Env):
     self.pix_size = 0.003125
     self.obj_ids = {'fixed': [], 'rigid': [], 'deformable': []}
     self.homej = np.array([-1, -0.5, 0.5, -0.5, -0.5, 0]) * np.pi
+    self.hz = hz
     self.agent_cams = cameras.RealSenseD415.CONFIG
 
     self.assets_root = assets_root
@@ -353,10 +354,17 @@ class Environment(gym.Env):
   # Robot Movement Functions
   #---------------------------------------------------------------------------
 
-  def movej(self, targj, speed=0.01, timeout=5):
+  def movej(self, targj, speed=0.01, timeout=5, monitor=None,
+            acceleration=None):
     """Move UR5 to target joint configuration."""
+    if (acceleration is not None and
+        (not np.isfinite(acceleration) or acceleration <= 0)):
+      raise ValueError('acceleration must be a positive finite value')
     t0 = time.time()
+    velocity = 0.
     while (time.time() - t0) < timeout:
+      if monitor is not None and not monitor():
+        return False
       currj = [p.getJointState(self.ur5, i)[0] for i in self.joints]
       currj = np.array(currj)
       diffj = targj - currj
@@ -366,7 +374,14 @@ class Environment(gym.Env):
       # Move with constant velocity
       norm = np.linalg.norm(diffj)
       v = diffj / norm if norm > 0 else 0
-      stepj = currj + v * min(speed, norm)
+      step = min(speed, norm)
+      if acceleration is not None:
+        # Discrete trapezoidal profile: ramp up by the acceleration limit and
+        # ramp down early enough to stop at the target without a speed jump.
+        stopping_speed = np.sqrt(2 * acceleration * norm)
+        velocity = min(speed, velocity + acceleration, stopping_speed)
+        step = min(velocity, norm)
+      stepj = currj + v * step
       gains = np.ones(len(self.joints))
       p.setJointMotorControlArray(
           bodyIndex=self.ur5,
@@ -378,15 +393,107 @@ class Environment(gym.Env):
     print(f'Warning: movej exceeded {timeout} second timeout. Skipping.')
     return True
 
-  def movep(self, pose, speed=0.01):
+  def movep(self, pose, speed=0.01, monitor=None, acceleration=None,
+            cartesian_speed=None, cartesian_acceleration=None):
     """Move UR5 to target end effector pose."""
+    if cartesian_speed is not None or cartesian_acceleration is not None:
+      return self._movep_cartesian_limited(
+          pose, cartesian_speed, cartesian_acceleration, monitor)
     if hasattr(self.ee, 'tip_offset'):
       pose = (np.asarray(pose[0]) + (0, 0, self.ee.tip_offset), pose[1])
     targj = self.solve_ik(pose)
-    return self.movej(targj, speed)
+    return self.movej(targj, speed, monitor=monitor,
+                      acceleration=acceleration)
 
-  def solve_ik(self, pose):
+  def _movep_cartesian_limited(self, pose, max_speed, acceleration,
+                               monitor=None, timeout=5):
+    """Follow a straight TCP path with trapezoidal Cartesian timing."""
+    if (max_speed is None or acceleration is None or
+        not np.isfinite(max_speed) or not np.isfinite(acceleration) or
+        max_speed <= 0 or acceleration <= 0):
+      raise ValueError('Cartesian speed and acceleration must be positive')
+    link = p.getLinkState(self.ur5, self.ee_tip)
+    offset = self.ee.tip_offset if hasattr(self.ee, 'tip_offset') else 0.
+    start_xyz = np.asarray(link[4], dtype=float) - (0, 0, offset)
+    end_xyz = np.asarray(pose[0], dtype=float)
+    delta = end_xyz - start_xyz
+    distance = float(np.linalg.norm(delta))
+    if distance < 1e-6:
+      adjusted = (end_xyz + (0, 0, offset), pose[1])
+      return self.movej(self.solve_ik(adjusted), monitor=monitor)
+
+    start_q = np.asarray(link[5], dtype=float)
+    end_q = np.asarray(pose[1], dtype=float)
+    if np.dot(start_q, end_q) < 0:
+      end_q = -end_q
+    ramp_time = max_speed / acceleration
+    ramp_distance = .5 * acceleration * ramp_time**2
+    if 2 * ramp_distance >= distance:
+      ramp_time = np.sqrt(distance / acceleration)
+      peak_speed = acceleration * ramp_time
+      cruise_time = 0.
+      ramp_distance = distance / 2
+    else:
+      peak_speed = max_speed
+      cruise_time = (distance - 2 * ramp_distance) / peak_speed
+    total_time = 2 * ramp_time + cruise_time
+    steps = max(1, int(np.ceil(total_time * self.hz)))
+    started = time.time()
+    previous_joints = np.array(
+        [p.getJointState(self.ur5, i)[0] for i in self.joints])
+    final_joints = None
+    for index in range(1, steps + 1):
+      if monitor is not None and not monitor():
+        return False
+      elapsed = min(index / self.hz, total_time)
+      if elapsed <= ramp_time:
+        travelled = .5 * acceleration * elapsed**2
+      elif elapsed <= ramp_time + cruise_time:
+        travelled = ramp_distance + peak_speed * (elapsed - ramp_time)
+      else:
+        remaining = total_time - elapsed
+        travelled = distance - .5 * acceleration * remaining**2
+      fraction = min(1., max(0., travelled / distance))
+      xyz = start_xyz + fraction * delta
+      quat = (1 - fraction) * start_q + fraction * end_q
+      quat /= np.linalg.norm(quat)
+      adjusted = (xyz + (0, 0, offset), quat)
+      final_joints = self.solve_ik(adjusted, rest_poses=previous_joints)
+      # Never command an IK branch discontinuity. A 50 mrad change is already
+      # much larger than adjacent targets on these 240 Hz Cartesian profiles.
+      if np.max(np.abs(final_joints - previous_joints)) > .05:
+        print('Warning: discontinuous Cartesian IK target. Skipping.')
+        return True
+      p.setJointMotorControlArray(
+          bodyIndex=self.ur5, jointIndices=self.joints,
+          controlMode=p.POSITION_CONTROL, targetPositions=final_joints,
+          positionGains=np.ones(len(self.joints)))
+      p.stepSimulation()
+      previous_joints = final_joints
+      if time.time() - started >= timeout:
+        print('Warning: Cartesian move exceeded timeout. Skipping.')
+        return True
+    # Allow the position servos to remove residual tracking error while the
+    # commanded Cartesian velocity remains zero.
+    for _ in range(self.hz):
+      if monitor is not None and not monitor():
+        return False
+      currj = np.array([p.getJointState(self.ur5, i)[0] for i in self.joints])
+      if all(np.abs(final_joints - currj) < getattr(self.ee, 'joint_tolerance', 1e-2)):
+        return False
+      p.stepSimulation()
+      if time.time() - started >= timeout:
+        print('Warning: Cartesian move exceeded timeout. Skipping.')
+        return True
+    return True
+
+  def solve_ik(self, pose, rest_poses=None):
     """Calculate joint configuration with inverse kinematics."""
+    continuity_reference = None
+    if rest_poses is None:
+      rest_poses = np.float32(self.homej)
+    else:
+      continuity_reference = np.asarray(rest_poses, dtype=np.float32)
     joints = p.calculateInverseKinematics(
         bodyUniqueId=self.ur5,
         endEffectorLinkIndex=self.ee_tip,
@@ -395,11 +502,15 @@ class Environment(gym.Env):
         lowerLimits=[-3 * np.pi / 2, -2.3562, -17, -17, -17, -17],
         upperLimits=[-np.pi / 2, 0, 17, 17, 17, 17],
         jointRanges=[np.pi, 2.3562, 34, 34, 34, 34],  # * 6,
-        restPoses=np.float32(self.homej).tolist(),
+        restPoses=np.asarray(rest_poses, dtype=np.float32).tolist(),
         maxNumIterations=100,
         residualThreshold=1e-5)
     joints = np.float32(joints)
-    joints[2:] = (joints[2:] + np.pi) % (2 * np.pi) - np.pi
+    if continuity_reference is None:
+      joints[2:] = (joints[2:] + np.pi) % (2 * np.pi) - np.pi
+    else:
+      joints[2:] = continuity_reference[2:] + (
+          joints[2:] - continuity_reference[2:] + np.pi) % (2 * np.pi) - np.pi
     return joints
 
   def _get_obs(self):

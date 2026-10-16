@@ -35,9 +35,11 @@ def main():
     obs = env.reset()
     record('reset')
     original_move, original_close, original_open = env.movep, env.ee.activate, env.ee.release
-    def move(pose, speed):
-      result = original_move(pose, speed)
-      record('move', target=pose, timeout=result)
+    def move(pose, speed, **kwargs):
+      result = original_move(pose, speed, **kwargs)
+      record('move', target=pose, timeout=result,
+             monitored='monitor' in kwargs,
+             acceleration=kwargs.get('acceleration'))
       return result
     def close():
       original_close()

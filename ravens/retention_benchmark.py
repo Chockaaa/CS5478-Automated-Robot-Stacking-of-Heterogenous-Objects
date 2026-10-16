@@ -13,7 +13,8 @@ import numpy as np
 import pybullet as p
 from ravens.environments.environment import Environment
 from ravens.tasks.task import Task
-from ravens.tasks.robotiq import Robotiq85
+from ravens.tasks.robotiq import (Robotiq85, SizeAwareRobotiq85,
+                                  SizeAwareV2Robotiq85, AdaptiveRobotiqPickPlace)
 
 
 def cases():
@@ -39,9 +40,13 @@ def pose_drift(reference, current):
 
 
 class RetentionTask(Task):
-  def __init__(self):
+  def __init__(self, controller='baseline'):
     super().__init__()
-    self.ee = Robotiq85
+    self.controller = controller
+    self.ee = (SizeAwareV2Robotiq85 if controller in ('size-aware-v2',
+                                                       'size-aware-v3',
+                                                       'size-aware-v4') else
+               SizeAwareRobotiq85 if controller == 'size-aware-v1' else Robotiq85)
     self.max_settle_steps = 4800
     self.case = None
 
@@ -132,7 +137,20 @@ def run_case(env, task, spec):
     yaw = spec['yaw'] + (math.pi/2 if spec['family'] == 'cuboid' else 0.)
     # Cylinders are rotationally symmetric but grasp approach yaw still varies.
     rotation = p.getQuaternionFromEuler((0, 0, yaw))
-    pick_z = max(.019, xyz[2] + spec['size'][2]/2 - .017)
+    height, width = spec['size'][2], min(spec['size'][:2])
+    pick_z = max(.019, xyz[2] + height/2 - .017)
+    if task.controller in ('size-aware-v1', 'size-aware-v2', 'size-aware-v3',
+                            'size-aware-v4'):
+      geometry = {
+          'size-aware-v1': AdaptiveRobotiqPickPlace.size_aware_pick_height,
+          'size-aware-v2': AdaptiveRobotiqPickPlace.size_aware_v2_pick_height,
+          'size-aware-v3': AdaptiveRobotiqPickPlace.size_aware_v3_pick_height,
+          'size-aware-v4': AdaptiveRobotiqPickPlace.size_aware_v4_pick_height,
+      }[task.controller]
+      pick_z = geometry(height, width)
+      env.ee.configure_grasp(width)
+    row['grasp_geometry'] = dict(height=height, width=width, pick_z=pick_z,
+                                 grip_force=env.ee.grip_force)
     move('above_pick', (*xyz[:2], .30))
     move('descend', (*xyz[:2], pick_z))
     hold('preclose', 60)
@@ -197,6 +215,10 @@ def main():
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument('--limit', type=int, default=108)
   parser.add_argument('--output', required=True)
+  parser.add_argument('--controller', choices=('baseline', 'size-aware-v1',
+                                                'size-aware-v2', 'size-aware-v3',
+                                                'size-aware-v4'),
+                      default='baseline')
   parser.add_argument('--disp', action='store_true')
   parser.add_argument('--grip_force', type=float, default=Robotiq85.grip_force)
   parser.add_argument('--preload', type=float, default=Robotiq85.contact_preload)
@@ -208,9 +230,13 @@ def main():
   if out.exists() or not 1 <= args.limit <= 108:
     parser.error('Use a new output directory and a limit from 1 to 108')
   out.mkdir(parents=True)
-  task = RetentionTask()
-  task.ee = type('TunedRobotiq85', (Robotiq85,), dict(grip_force=args.grip_force, contact_preload=args.preload,
-                                                   pad_friction=args.pad_friction, pad_spinning_friction=args.pad_spinning))
+  task = RetentionTask(args.controller)
+  # Preserve controller-specific behavior (for example configure_grasp) while
+  # allowing explicit diagnostic physics overrides. Replacing it with the base
+  # class would silently disable the controller under test.
+  task.ee = type('TunedRobotiq85', (task.ee,), dict(
+      grip_force=args.grip_force, contact_preload=args.preload,
+      pad_friction=args.pad_friction, pad_spinning_friction=args.pad_spinning))
   env = Environment(str(Path(__file__).parent / 'environments/assets'),
                     task=task, disp=args.disp)
   rows = []

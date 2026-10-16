@@ -240,6 +240,8 @@ recommended replacements**. See the
 [reliability development report](validation/reliability-development.json) for
 the five-scene oracle comparisons, including unsuccessful candidates. Neither
 the learned weights nor the benchmark's success thresholds were changed.
+`size-aware-v1` through `size-aware-v4` are also retained only to reproduce the
+rejected size-aware experiments described below.
 
 Remaining work, in order:
 
@@ -320,6 +322,57 @@ tower performance changed: the protocol and metric are different. See the
 [retention results](validation/retention-isolation-v1.json). All 32 automated
 tests passed, including a physical single-object trial. The retention gate
 failed; the production controller and trained weights remain unchanged.
+
+The follow-up size-aware experiment estimates object height and closing width,
+keeps the short-object baseline depth, and only centres the grasp for objects
+at least 50 mm tall and 48 mm wide. Closing force remains 2 N normally and is
+bounded at 3 N in that wide/tall regime. Policy actions obtain both dimensions
+from the same RGB-D component as the Transporter pick; only the diagnostic and
+ground-truth oracle use known scene geometry.
+
+`size-aware-v4` improved the frozen matrix to **45/108 (41.7%)**: cubes 11/36,
+cuboids 19/36 and cylinders 15/36, with no errors or timeouts. It therefore
+earned a matched oracle tower screen, but completed only **3/5**, below the
+baseline's 4/5 on validation seeds 0-4. It also remains far below the absolute
+95% retention gate. It was not promoted, no demonstrations were collected,
+and Transporter was not retrained. See the
+[size-aware result record](validation/retention-size-aware-results.json).
+
+To reproduce the final candidate, always choose new output directories:
+
+```shell
+conda activate ravens-transporter
+python -m ravens.retention_benchmark --controller=size-aware-v4 --limit=108 --output=robotiq-results/my-size-aware-v4-retention
+python -m ravens.heterogeneous_run --mode=oracle --split=validation --seed=0 --episodes=5 --max_steps=6 --max_seconds=180 --controller=size-aware-v4 --name=mixed-tower-v2 --checkpoint=1000 --data_dir=robotiq-dataset/mixed-v2 --output=robotiq-results/my-size-aware-v4-towers
+```
+
+The tower command exits nonzero when an episode records an error (including a
+settling-limit failure) while still writing `results.json` and `summary.json`.
+Do not interpret that process status as missing results.
+
+Stage-level replays then localized the remaining failures. In validation seed
+3 the final cylinder was retained through high lift and transfer but escaped
+during lowering; in seed 4 it escaped during horizontal transfer. The previous
+controller continued moving after the loss, and both cylinders rolled out of
+bounds at roughly 0.23-0.25 m/s.
+
+`monitored-v1` checks bilateral contact every simulation step of loaded motion,
+tolerates 12 consecutive missing samples (about 50 ms), then aborts and skips
+the empty placement path. It recovered seed 3 and matched baseline at **4/5**,
+but did not improve it. `placement-v1` added 10 mm lowering waypoints and a
+120-step grasped dwell before release; it regressed to **2/5** and was rejected.
+Both remain opt-in diagnostic profiles. Neither was promoted or evaluated with
+Transporter. See the [continuous-monitoring result record](validation/continuous-monitoring-results.json).
+
+`accel-v1` subsequently preserved baseline grasp/place geometry and added a
+trapezoidal joint-target ramp only during monitored loaded motion. On the two
+targeted failure scenes it recovered seed 4 but failed seed 3 during initial
+lift (1/2). The trace measured the released cylinder near 0.38 m/s, so this
+joint-space ramp did not produce gentler object motion in the simulated
+position controller. It was rejected before the five-scene, matrix, and
+20-scene gates. A future attempt should control end-effector velocity and
+acceleration directly or improve contact mechanics, rather than only ramping
+joint-position targets.
 
 ### Expanded demonstration experiment
 

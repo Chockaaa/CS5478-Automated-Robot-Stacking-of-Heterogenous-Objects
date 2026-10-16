@@ -53,6 +53,20 @@ class RetentionBenchmarkTest(unittest.TestCase):
     finally:
       env.close()
 
+  def test_size_aware_trial_records_bounded_geometry_control(self):
+    task = RetentionTask('size-aware-v1')
+    assets = str(Path(__file__).parent / 'environments/assets')
+    env = Environment(assets, task=task)
+    try:
+      result = run_case(env, task, cases()[8])
+      geometry = result['grasp_geometry']
+      self.assertAlmostEqual(geometry['height'], .055)
+      self.assertAlmostEqual(geometry['width'], .05)
+      self.assertAlmostEqual(geometry['pick_z'], .0275)
+      self.assertEqual(geometry['grip_force'], 3.)
+    finally:
+      env.close()
+
 
 if __name__ == '__main__':
   unittest.main()

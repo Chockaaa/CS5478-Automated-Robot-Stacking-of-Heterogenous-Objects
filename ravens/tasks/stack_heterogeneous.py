@@ -3,7 +3,9 @@ import collections
 import numpy as np
 import pybullet as p
 from ravens.tasks.task import Task
-from ravens.tasks.robotiq import Robotiq85, RetentionRobotiq85, AdaptiveRobotiqPickPlace
+from ravens.tasks.robotiq import (Robotiq85, RetentionRobotiq85,
+                                  SizeAwareRobotiq85, SizeAwareV2Robotiq85,
+                                  AdaptiveRobotiqPickPlace)
 
 
 SPLITS = {'train': 0, 'validation': 1, 'test': 2}
@@ -61,7 +63,11 @@ class StackHeterogeneous(Task):
     if continuous:
       raise ValueError('Mixed-object towers require discrete actions.')
     super().__init__()
-    self.ee = RetentionRobotiq85 if controller == 'retention-v1' else Robotiq85
+    self.ee = (RetentionRobotiq85 if controller == 'retention-v1' else
+               SizeAwareV2Robotiq85 if controller in ('size-aware-v2',
+                                                       'size-aware-v3',
+                                                       'size-aware-v4') else
+               SizeAwareRobotiq85 if controller == 'size-aware-v1' else Robotiq85)
     self.primitive = AdaptiveRobotiqPickPlace(controller)
     self.scene_seed = seed
     self.mode = split
@@ -128,7 +134,8 @@ class StackHeterogeneous(Task):
       support = evaluation['top_height']
       base_xy = self.manifest['goal']['base_xy']
       place = ((*base_xy, support), rotation)
-      return dict(pose0=pick, pose1=place)
+      return dict(pose0=pick, pose1=place, grasp_height=obj['size'][2],
+                  grasp_width=min(obj['size'][:2]))
     return collections.namedtuple('Oracle', ['act'])(act)
 
   def evaluate(self):

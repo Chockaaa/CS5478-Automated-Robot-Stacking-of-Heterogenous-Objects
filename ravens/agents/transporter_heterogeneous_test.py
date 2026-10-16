@@ -34,6 +34,8 @@ class AgentDecodeTest(unittest.TestCase):
       np.testing.assert_allclose(first[key][0], second[key][0])
       np.testing.assert_allclose(first[key][1], second[key][1])
     self.assertAlmostEqual(first['pose0'][0][2], .04)
+    self.assertAlmostEqual(first['grasp_height'], .04)
+    self.assertAlmostEqual(first['grasp_width'], .032)
     self.assertAlmostEqual(first['pose1'][0][2], .08)
     np.testing.assert_allclose(first['pose0'][1], first['pose1'][1])
     # Jaw direction is the rectangle's short axis, modulo gripper symmetry.
@@ -70,6 +72,8 @@ class AgentDecodeTest(unittest.TestCase):
     np.testing.assert_allclose(action['pose0'][0], [.424, -.292, .04], atol=1e-6)
     self.assertAlmostEqual(abs(action['pose0'][1][2]), np.sqrt(.5), places=5)
     self.assertAlmostEqual(action['pose1'][0][2], .08)
+    self.assertAlmostEqual(action['grasp_height'], .04)
+    self.assertAlmostEqual(action['grasp_width'], .032)
     # Placement XY remains the network's choice, not a fixed goal override.
     np.testing.assert_allclose(action['pose1'][0][:2], [.492, .184])
 
